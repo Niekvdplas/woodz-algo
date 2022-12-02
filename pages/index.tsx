@@ -1,88 +1,131 @@
-import Head from "next/head";
-import Image from "next/image";
-import Script from "next/script";
 import { useEffect, useState, useRef } from "react";
-import styles from "../styles/Home.module.css";
+import { createClient } from '@supabase/supabase-js'
+
 
 export default function Home() {
+  const supabaseUrl : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabase = createClient(supabaseUrl!, supabaseKey!)
+  const [buttons, setButtons] : any = useState([])
+
   const inputRef = useRef<any>([]);
 
   const [blurval, setblurval] = useState("");
 
   const [formFields, setFormFields] = useState([
-    { lengte: '', afmeting: "69x114" },
+    { lengte: "", afmeting: "69x114" },
   ]);
 
-  const [outputData, setOutputData] = useState("");
+  const [outputData, setOutputData] = useState([]);
 
-  const options = ["69x114", "69x114NON", "56x69", "56x79", "56x89", "92x114", "56x116"];
+  const options = [
+    "69x114",
+    "69x114NON",
+    "56x69",
+    "56x79",
+    "56x89",
+    "92x114",
+    "56x116",
+  ];
 
   const handleFormChange = (event: any, index: number) => {
     let data: any = [...formFields];
-    console.log(event.target.value)
     data[index][event.target.name] = event.target.value;
-    console.log(data)
     setFormFields(data);
   };
 
-  function buildData(ob: any) {
-    let return_str = "";
-    for (let obj in ob) {
-      return_str +=
-        "Voor maat " +
-        obj +
-        " heb je " +
-        ob[obj][0] +
-        " balk(en) nodig met de maten:\n";
-      for (let arr in ob[obj][1]) {
-        return_str += "[";
-        for (let subarr in ob[obj][1][arr]) {
-          return_str += ob[obj][1][arr][subarr] - 3 + ", ";
-        }
-        return_str = return_str.slice(0, -2);
-        return_str += "], ";
-      }
-      return_str = return_str.slice(0, -2);
-      return_str += "\n";
+  async function addToInventory(beamlength: number, size: string, index : number) {
+    let buts = [...buttons]
+    buts[index] = false;
+    setButtons(buts)
+    if (beamlength < 200){
+      return
     }
-    setOutputData(return_str);
+    const { data, error } = await supabase
+      .from('Inventory')
+      .insert(
+        { Beam_Size: size, length: beamlength })
+  }
+
+  function buildData(obj: any) {
+    let return_str = "";
+    if (obj[0] != 6000) {
+      return_str += "Inventaris balk met lengte ";
+    } else {
+      return_str += "Normale balk met lengte ";
+    }
+    return_str += obj[0];
+    return_str += ": [";
+    for (let j = 0; j < obj[1][1].length; j++) {
+      return_str += obj[1][1][j] + ", ";
+    }
+    return_str = return_str.slice(0, -2);
+    return_str += "], ";
+    return_str = return_str.slice(0, -2);
+    return_str += ". Over: ";
+    return_str += obj[1][0];
+    return_str += "\n";
+    return return_str;
   }
 
   const submit = (e: any) => {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formFields),
-    };
-    fetch("/api/algo", requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        buildData(data);
-      });
+    async function fetchData() {
+      let { data: Inventory, error } = await supabase
+      .from('Inventory')
+      .select('*')
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: formFields, added_bins: Inventory }),
+      };
+      let buts = [...buttons];
+      fetch("/api/algo", requestOptions)
+        .then((response) => response.json())
+        .then(async (data: any[]) => {
+          for (let obj in data){
+            for (let ob in data[obj]){
+              buts.push(true)
+              for (let entry  in Inventory){
+                if (Inventory[entry as keyof object]['length'] == data[obj][ob][0] && Inventory[entry as keyof object]['Beam_Size'] == obj){
+                  const { data, error } = await supabase
+                  .from('Inventory')
+                  .delete()
+                  .eq('id', Inventory[entry as keyof object]['id'])
+
+                }
+              }
+            }
+          }
+          setOutputData([data as never]);
+        });
+        setButtons(buts);
+
+
+    }
+    fetchData();
   };
 
   const clear = () => {
-    setFormFields([
-      { lengte: '', afmeting: "69x114" },
-    ]);
-    setOutputData("");
+    setFormFields([{ lengte: "", afmeting: "69x114" }]);
+    setOutputData([]);
+    setButtons([])
   };
 
   const handleFocus = (index: any) => {
     let data = [...formFields];
     setblurval(data[index].lengte);
-    data[index].lengte = '';
-    setFormFields(data)
-  }
+    data[index].lengte = "";
+    setFormFields(data);
+  };
 
   const handleBlur = (index: any) => {
     let data = [...formFields];
-    if (data[index].lengte == '' && blurval != ''){
-      data[index].lengte = blurval
-      setblurval('');
-      setFormFields(data)
+    if (data[index].lengte == "" && blurval != "") {
+      data[index].lengte = blurval;
+      setblurval("");
+      setFormFields(data);
     }
-  }
+  };
 
   const kopie = (event: any, index: any) => {
     event.preventDefault();
@@ -90,16 +133,14 @@ export default function Home() {
     let newObj = JSON.parse(JSON.stringify(data[index]));
     setFormFields([newObj, ...formFields]);
     setTimeout(() => {
-      inputRef.current[0]?.focus()
-
-      console.log("focused");
+      inputRef.current[0]?.focus();
     }, 100);
   };
 
   const removeFields = (event: any, index: any) => {
     event.preventDefault();
     let data = [...formFields];
-    if (data.length > 1){
+    if (data.length > 1) {
       data.splice(index, 1);
       setFormFields(data);
     }
@@ -107,9 +148,41 @@ export default function Home() {
 
   return (
     <div className="grid place-items-center mt-8">
-      <p className="my-6 px-4 py-2" style={{ whiteSpace: "pre-wrap" }}>
-        {outputData}
-      </p>
+      {outputData &&
+        outputData.map &&
+        outputData.map((item: any, index: number) => {
+          return Object.keys(item).map((key : any, i) => {
+            return (
+              <div key={i}>
+                <text className="mb-4">
+                  Voor maat {key} heb je {item[key as keyof object]['length']} balk(en) nodig met
+                  de maten:{""}
+                  <br />
+                </text>
+                {item[key].map((entry: any, index2: number) => {
+                  return (
+                    <div key={index2} className="flex flex-row">
+                      <text
+                        className=" my-4 px-4 py-2"
+                        style={{ whiteSpace: "pre-wrap" }}
+                      >
+                        {buildData(entry)}
+                      </text>
+                     { (entry[1][0] > 200) && buttons[index2] &&
+                      <button 
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold -ml-3 my-5 rounded-full w-8 h-8 text-center align-items"
+                        onClick={() => addToInventory(entry[1][0], key, index2)}
+                      >
+                        <text>+</text>
+                      </button>
+                      }
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          });
+        })}
       <div className="inline-flex">
         <button
           className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r ml-3"
@@ -136,7 +209,7 @@ export default function Home() {
                   className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                   name="lengte"
                   type="number"
-                  ref={el => inputRef.current[index] = el}
+                  ref={(el) => (inputRef.current[index] = el)}
                   onFocus={() => handleFocus(index)}
                   onBlur={() => handleBlur(index)}
                   onChange={(event) => handleFormChange(event, index)}
