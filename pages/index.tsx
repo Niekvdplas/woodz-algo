@@ -30,6 +30,9 @@ export default function Home() {
 
   const handleFormChange = (event: any, index: number) => {
     let data: any = [...formFields];
+    if (typeof event.target.value === "number"){
+      data[index][event.target.name] = Math.max(1, Math.min(6000, event.target.value));
+    }
     data[index][event.target.name] = event.target.value;
     setFormFields(data);
   };
@@ -147,7 +150,7 @@ export default function Home() {
   };
 
   return (
-    <div className="grid place-items-center mt-8">
+    <div className="grid place-items-center">
       {outputData &&
         outputData.map &&
         outputData.map((item: any, index: number) => {
@@ -209,6 +212,8 @@ export default function Home() {
                   className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                   name="lengte"
                   type="number"
+                  min="1"
+                  max="6000"
                   ref={(el) => (inputRef.current[index] = el)}
                   onFocus={() => handleFocus(index)}
                   onBlur={() => handleBlur(index)}

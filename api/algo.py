@@ -62,7 +62,6 @@ def catch_all(path):
                 sorted(processed_data[key], reverse=True)
             else:
                 length = bins.pop(0)
-                print(length)
                 processed_data[key] = sorted(processed_data[key])
             k = optimal_res(length, deepcopy(processed_data[key]), [])
             if length != 6000 and (k[0] > 150 and k[0] < 1000):
