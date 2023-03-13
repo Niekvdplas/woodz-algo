@@ -1,12 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { createClient } from '@supabase/supabase-js'
-
 
 export default function Home() {
-  const supabaseUrl : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const supabase = createClient(supabaseUrl!, supabaseKey!)
-  const [buttons, setButtons] : any = useState([])
+  // const supabaseUrl : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL
+  // const supabaseKey : string | undefined = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // const [buttons, setButtons] : any = useState([])
+  // const supabase = createClient(supabaseUrl!, supabaseKey!);
 
   const inputRef = useRef<any>([]);
 
@@ -37,18 +35,18 @@ export default function Home() {
     setFormFields(data);
   };
 
-  async function addToInventory(beamlength: number, size: string, index : number) {
-    let buts = [...buttons]
-    buts[index] = false;
-    setButtons(buts)
-    if (beamlength < 200){
-      return
-    }
-    const { data, error } = await supabase
-      .from('Inventory')
-      .insert(
-        { Beam_Size: size, length: beamlength })
-  }
+  // async function addToInventory(beamlength: number, size: string, index : number) {
+  //   let buts = [...buttons]
+  //   buts[index] = false;
+  //   setButtons(buts)
+  //   if (beamlength < 200){
+  //     return
+  //   }
+  //   const { data, error } = await supabase
+  //     .from('Inventory')
+  //     .insert(
+  //       { Beam_Size: size, length: beamlength })
+  // }
 
   function buildData(obj: any) {
     let return_str = "";
@@ -73,35 +71,36 @@ export default function Home() {
 
   const submit = (e: any) => {
     async function fetchData() {
-      let { data: Inventory, error } = await supabase
-      .from('Inventory')
-      .select('*')
+      let Inventory : {} = []
+      // let { data: Inventory, error } = await supabase
+      // .from('Inventory')
+      // .select('*')
       const requestOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: formFields, added_bins: Inventory }),
       };
-      let buts = [...buttons];
+      // let buts = [...buttons];
       fetch("/api/algo", requestOptions)
         .then((response) => response.json())
         .then(async (data: any[]) => {
-          for (let obj in data){
-            for (let ob in data[obj]){
-              buts.push(true)
-              for (let entry  in Inventory){
-                if (Inventory[entry as keyof object]['length'] == data[obj][ob][0] && Inventory[entry as keyof object]['Beam_Size'] == obj){
-                  const { data, error } = await supabase
-                  .from('Inventory')
-                  .delete()
-                  .eq('id', Inventory[entry as keyof object]['id'])
+          // for (let obj in data){
+          //   for (let ob in data[obj]){
+          //     buts.push(true)
+          //     for (let entry  in Inventory){
+          //       if (Inventory[entry as keyof object]['length'] == data[obj][ob][0] && Inventory[entry as keyof object]['Beam_Size'] == obj){
+          //         const { data, error } = await supabase
+          //         .from('Inventory')
+          //         .delete()
+          //         .eq('id', Inventory[entry as keyof object]['id'])
 
-                }
-              }
-            }
-          }
+          //       }
+          //     }
+          //   }
+          // }
           setOutputData([data as never]);
         });
-        setButtons(buts);
+        // setButtons(buts);
 
 
     }
@@ -111,7 +110,7 @@ export default function Home() {
   const clear = () => {
     setFormFields([{ lengte: "", afmeting: "69x114" }]);
     setOutputData([]);
-    setButtons([])
+    // setButtons([])
   };
 
   const handleFocus = (index: any) => {
@@ -150,7 +149,7 @@ export default function Home() {
   };
 
   return (
-    <div className="grid place-items-center">
+    <div className="grid place-items-center mt-4">
       {outputData &&
         outputData.map &&
         outputData.map((item: any, index: number) => {
@@ -171,14 +170,14 @@ export default function Home() {
                       >
                         {buildData(entry)}
                       </text>
-                     { (entry[1][0] > 200) && buttons[index2] &&
+                     {/* { (entry[1][0] > 200) && buttons[index2] &&
                       <button 
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold -ml-3 my-5 rounded-full w-8 h-8 text-center align-items"
                         onClick={() => addToInventory(entry[1][0], key, index2)}
                       >
                         <text>+</text>
                       </button>
-                      }
+                      } */}
                     </div>
                   );
                 })}

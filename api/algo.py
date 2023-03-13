@@ -1,8 +1,6 @@
 # from ortools.linear_solver import pywraplp
 from flask import Flask, Response, request, jsonify
-
 app = Flask(__name__)
-
 from copy import deepcopy
 
 def process_data(data):
@@ -45,7 +43,6 @@ def get_sizes(key, data):
             available_sizes.append(entry['length'])
     return available_sizes
 
-
 @app.route('/', methods = ['POST', 'GET'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['POST', 'GET'])
 def catch_all(path):
@@ -54,7 +51,7 @@ def catch_all(path):
     return_data = {}
     for key in processed_data:
         return_data[key] = []
-        bins = get_sizes(key, data['added_bins'])
+        bins = [] #get_sizes(key, data['added_bins'])
         while processed_data[key] != []:
             length = 0
             if bins == []:
@@ -68,7 +65,6 @@ def catch_all(path):
                 continue
             if k[0] != length:
                 return_data[key].append([length, deepcopy(k)])
-            processed_data[key] = [i for i in processed_data[key] if not i in k[1] or k[1].remove(i)]        
-
+            processed_data[key] = [i for i in processed_data[key] if not i in k[1] or k[1].remove(i)]
     return jsonify(return_data)
 
