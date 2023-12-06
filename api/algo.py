@@ -15,26 +15,25 @@ def process_data(data):
 
     return processed
 
-def optimal_res(weight_left, weights, combination):
-    if weight_left == 0:
-        return 0, combination
-    if weights == []:
-        return weight_left, combination
-    if all(i + 3 > weight_left for i in weights):
-        return weight_left, combination
-    curr_weight = weights.pop(0)
-    if curr_weight > weight_left:
-        return weight_left, []
-    if curr_weight + 3 <= weight_left:
-        comb1 = deepcopy(combination)
-        comb2 = deepcopy(combination)
-        comb2.append(curr_weight)
-        val_1 = optimal_res(weight_left, deepcopy(weights), comb1)
-        val_2 = optimal_res((weight_left - curr_weight - 3), deepcopy(weights), comb2)
-        if val_1[0] < val_2[0]:
-            return val_1
-        else:
-            return val_2
+def optimal_res(weights, weight_left):
+    n = len(weights)
+    dp = [[0 for _ in range(weight_left+1)] for _ in range(n+1)]
+    items = [[[] for _ in range(weight_left+1)] for _ in range(n+1)]
+    
+    for i in range(1, n+1):
+        for w in range(weight_left+1):
+            if weights[i-1] + 3 <= w:
+                if weights[i-1] + 3 + dp[i-1][w-weights[i-1]-3] > dp[i-1][w]:
+                    dp[i][w] = weights[i-1] + 3 + dp[i-1][w-weights[i-1]-3]
+                    items[i][w] = items[i-1][w-weights[i-1]-3] + [weights[i-1]]
+                else:
+                    dp[i][w] = dp[i-1][w]
+                    items[i][w] = items[i-1][w]
+            else:
+                dp[i][w] = dp[i-1][w]
+                items[i][w] = items[i-1][w]
+    
+    return weight_left - max(dp[-1]), items[n][dp[-1].index(max(dp[-1]))]
 
 def get_sizes(key, data):
     available_sizes = []
@@ -60,7 +59,7 @@ def catch_all(path):
             else:
                 length = bins.pop(0)
                 processed_data[key] = sorted(processed_data[key])
-            k = optimal_res(length, deepcopy(processed_data[key]), [])
+            k = optimal_res(deepcopy(processed_data[key]), length)
             if length != 6000 and (k[0] > 150 and k[0] < 1000):
                 continue
             if k[0] != length:
